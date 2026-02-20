@@ -1,0 +1,7 @@
+# ignore build
+/build
+/src-old
+/test
+
+# ignore target executable
+434alloc
