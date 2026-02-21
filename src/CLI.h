@@ -5,14 +5,15 @@
 #include <vector>
 
 namespace cli {
-    // Execution flag precedence: -h, -r, -p, and -s
+    // Execution flag precedence: -h, -x, -r, -p, and -s
     enum class Mode : uint8_t {
         Initial = 0,    // for enum comparison to bubble up priority
         Invalid = 1,    // invlalid arg state
         Scan = 2,
         Parse = 3,
         IR = 4,
-        Help = 5,
+        Rename = 5,
+        Help = 6,
     };
 
     struct Options {

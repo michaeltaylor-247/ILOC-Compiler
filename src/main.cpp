@@ -28,7 +28,6 @@ int main(int argc, char* argv[]) {
     // Initialize Compiler Components
     Scanner scanner(options.filename);
     Parser parser;
-    RegAlloc regAlloc;
 
 
     // IR Init
@@ -49,7 +48,7 @@ int main(int argc, char* argv[]) {
     //  no commands specified : behavir as -p
     //
     //  From part2 (frontend + new backend):
-    //  -x : TODO
+    //  -x : rename
     //  k : TODO
     //
 
@@ -109,6 +108,15 @@ int main(int argc, char* argv[]) {
     if(options.mode == cli::Mode::IR) {
         if(!isValidILOC) return 1;
         ir.printIR();
+        std::cout << "MAX SR FOUDN: " << ir.getMaxSR() << std::endl;
+        return 0;
+    }
+
+    if(options.mode == cli::Mode::Rename) {
+        if(!isValidILOC) return 1;
+        RegAlloc regAlloc(ir.getMaxSR());
+        if(!regAlloc.renameReg(ir)) return 1;
+        ir.printRenamedILOC();
         return 0;
     }
 

@@ -204,3 +204,4 @@ bool Parser::parse(Scanner& scanner, IR& ir) {
     ir_ = nullptr;
     return !hadError;
 }
+

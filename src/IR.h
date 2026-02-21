@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
 
 #include "ILOC.h"
 
@@ -33,6 +34,7 @@ class IR {
         IRNode* head;
         IRNode* tail;
         
+        int maxSR;
         int opCount;
 
     public:
@@ -42,9 +44,13 @@ class IR {
 
         // IR Methods
         IRNode* appendIR(IRNode* node);
-        void getOpCount();
+        IRNode* getHead();
+        IRNode* getTail();
+        int getMaxSR();
+        int getOpCount();
 
         // Printing 
         void printOperand(Operand& op);
         void printIR();
+        void printRenamedILOC();
 };

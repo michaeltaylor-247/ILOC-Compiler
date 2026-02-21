@@ -31,6 +31,7 @@ cli::Options cli::parseArgs(int argc, char** argv) {
             else {
                 switch(arg[1]) {
                     case 'h': opts.mode = (Mode::Help > opts.mode)  ? Mode::Help   : opts.mode; break;
+                    case 'x': opts.mode = (Mode::Rename > opts.mode)? Mode::Rename : opts.mode; break;
                     case 'r': opts.mode = (Mode::IR > opts.mode)    ? Mode::IR     : opts.mode; break;
                     case 'p': opts.mode = (Mode::Parse > opts.mode) ? Mode::Parse  : opts.mode; break;
                     case 's': opts.mode = (Mode::Scan > opts.mode)  ? Mode::Scan   : opts.mode; break;
@@ -68,9 +69,10 @@ void cli::help() {
     std::cout << "  -p <name>        scans and parses the input to generate the Intermediate Representation of the input. Reports success or failure.\n";
 
     std::cout << "  -r <name>        generates the Intermediate Representation and then prints it in a human-readable format\n";
+    std::cout << "  -x <name>        scans/parses input, performs register renaming, and prints renamed IR\n";
 
     std::cout << "\n";
 
     std::cout << "If no flag is provided, the default behavior is as if the -p flag was specified\n";
-    std::cout << "Flags are intended to be mutually exclusive, providing multiple will follow the flag priority: -h, -r, -p, -s\n";
+    std::cout << "Flags are intended to be mutually exclusive, providing multiple will follow the flag priority: -h, -x, -r, -p, -s\n";
 }

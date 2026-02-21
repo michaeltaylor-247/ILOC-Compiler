@@ -8,16 +8,17 @@
 
 class Parser {
     private:
-        bool hadError = false; // simple flag to mark invalid iloc program
-
         // Non-owning phase inputs (set during parse call)
         Scanner* scanner_ = nullptr;
         IR* ir_ = nullptr;
+
+        bool hadError = false; // simple flag to mark invalid iloc program
 
         // Context for the line currently being parsed
         uint32_t currentLine = 0;
         ILOC::Opcode currentOpcode = ILOC::Opcode::INVALID;
 
+    private:
         // heleprs
         void skipToEOL();
         
@@ -27,6 +28,7 @@ class Parser {
         void parseArithop(); // add, sub, mult, lshift, rshift
         void parseOutput();  // output
         void parseNop();     // nop
+        
 
     public:
         Parser();
