@@ -2,6 +2,7 @@
 /build
 /src-old
 /test
+/input
 
 # ignore target executable
 434alloc

@@ -15,7 +15,12 @@ void addDefOperands(IRNode* node, std::vector<Operand*>& defs) {
 }
 
 void addUseOperands(IRNode* node, std::vector<Operand*>& uses) {
-    if(node->opcode == ILOC::Opcode::LOAD || node->opcode == ILOC::Opcode::STORE) {
+    if(node->opcode == ILOC::Opcode::LOAD) {
+        uses.push_back(&node->op1);
+        return;
+    }
+
+    if(node->opcode == ILOC::Opcode::STORE) {
         uses.push_back(&node->op1);
         uses.push_back(&node->op3);
         return;
