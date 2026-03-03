@@ -1,16 +1,14 @@
 #include "CLI.h"
 
 cli::Options cli::parseArgs(int argc, char** argv) {
-    // Starts at Mode::Initial
     cli::Options opts{};
 
-    // Convert to vector & skip arg[0] as that's just the program name
+    // Store args[1:] in vector;
     std::vector<std::string> args(argv + 1, argv + argc);
-
 
     int flagCount = 0;
     for(auto& arg : args) {
-        if(arg[0] != '-') {  // Treat as file(s)
+        if(arg[0] != '-') {  // Treat as file
             if(opts.filename.empty()) opts.filename = std::string(arg);
             else { 
                 opts.error = "ERROR: Too many files passed";  
@@ -24,30 +22,26 @@ cli::Options cli::parseArgs(int argc, char** argv) {
             if(flagCount > 1) std::cout << "WARNING: Too many flags, choosing higest priority\n";
             flagCount++;
             
-            // easy check for flag with a valid prefix (ex. -hx)
-            if(arg.size() > 2) {
-                opts.mode = Mode::Invalid;
-            }
-            else {
-                switch(arg[1]) {
-                    case 'h': opts.mode = (Mode::Help > opts.mode)  ? Mode::Help   : opts.mode; break;
-                    case 'x': opts.mode = (Mode::Rename > opts.mode)? Mode::Rename : opts.mode; break;
-                    case 'r': opts.mode = (Mode::IR > opts.mode)    ? Mode::IR     : opts.mode; break;
-                    case 'p': opts.mode = (Mode::Parse > opts.mode) ? Mode::Parse  : opts.mode; break;
-                    case 's': opts.mode = (Mode::Scan > opts.mode)  ? Mode::Scan   : opts.mode; break;
-                    default : opts.mode = (Mode::Invalid > opts.mode)  ? Mode::Invalid   : opts.mode; break;
-                }
+            switch(arg[1]) {
+                case 'h': opts.mode = (Mode::Help > opts.mode)  ? Mode::Help   : opts.mode; break;
+                case 'x': opts.mode = (Mode::Rename > opts.mode)? Mode::Rename : opts.mode; break;
+                case 'r': opts.mode = (Mode::IR > opts.mode)    ? Mode::IR     : opts.mode; break;
+                case 'p': opts.mode = (Mode::Parse > opts.mode) ? Mode::Parse  : opts.mode; break;
+                case 's': opts.mode = (Mode::Scan > opts.mode)  ? Mode::Scan   : opts.mode; break;
+                default : opts.mode = (Mode::Invalid > opts.mode)  ? Mode::Invalid   : opts.mode; break;
             }
         }
     }
 
-    // Post Flag Processing...
+    // Post Processing of Arguments...
 
     // No flag was provided --> parse mode
     if(opts.mode == Mode::Initial) opts.mode = Mode::Parse;
 
-    // 
+    // General Error 
     if(opts.mode == Mode::Invalid) opts.error = "ERROR: Invalid Flag Passed";
+
+    // Flag but no file
     if(opts.filename.empty() && opts.mode != Mode::Help)  {
         opts.error = "ERROR: No file paseed";
         opts.mode = Mode::Invalid;

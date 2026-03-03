@@ -15,7 +15,7 @@
 */
 struct Token {
     ILOC::Category category;    // syntactic cateogry
-    uint32_t lexeme = 0;        // lexeme (opcode, constant, reg)
+    uint32_t lexeme = 0;        // lexeme (specifies the actual word)
     uint32_t lineNumber = 0;    // line number
 };
 

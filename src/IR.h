@@ -3,6 +3,7 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include <limits.h>
 
 #include "ILOC.h"
 

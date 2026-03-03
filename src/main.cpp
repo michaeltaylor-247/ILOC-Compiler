@@ -10,7 +10,6 @@
 int main(int argc, char* argv[]) {
     cli::Options options = cli::parseArgs(argc, argv);
 
-    // Check if cmd args were valid or help
     switch(options.mode) {
         case cli::Mode::Invalid:
             std::cerr << options.error << "\n";
@@ -21,40 +20,17 @@ int main(int argc, char* argv[]) {
             cli::help();
             return 0;
 
-        default:
-            break;
+        default: break;
     };
 
     // Initialize Compiler Components
     Scanner scanner(options.filename);
     Parser parser;
 
-
     // IR Init
     IR ir;
     
-
-
-    // TODO: continue refacatoring of the pipeline....
-    //  - manage to decouple everything so that main could stay fairly unchanged...
-    //  - Next i think main should be changed to more elegantly orchestrate the pipelien
-    //
-    // Do compiler based on flag passed...
-    // From part 1 (only frontend):
-    //  -h : print usage
-    //  -s : read file and print list of tokens (only scan)
-    //  -p : read file, scan & parse, build IR, print errors if any
-    //  -r : read file, scan & paruse, build IR, print IR
-    //  no commands specified : behavir as -p
-    //
-    //  From part2 (frontend + new backend):
-    //  -x : rename
-    //  k : TODO
-    //
-
-    // TODO:
-    // Refactor this to operate more as a pipeline of functionality....
-    // --> Depending on the flag passed, do
+    // Execture the Compiler
     if(options.mode == cli::Mode::Scan) {
         while(true) {
             Token t = scanner.getToken();
@@ -102,9 +78,12 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+
     // by default, parse
     bool isValidILOC = parser.parse(scanner, ir);
 
+
+    // If need to show IR, print it
     if(options.mode == cli::Mode::IR) {
         if(!isValidILOC) return 1;
         ir.printIR();
@@ -112,11 +91,13 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    // If Register Renaming invokved, call register renaming
     if(options.mode == cli::Mode::Rename) {
         if(!isValidILOC) return 1;
         RegAlloc regAlloc(ir.getMaxSR());
         if(!regAlloc.renameReg(ir)) return 1;
         ir.printRenamedILOC();
+        ir.printIR();
         return 0;
     }
 

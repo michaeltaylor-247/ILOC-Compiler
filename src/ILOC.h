@@ -27,7 +27,7 @@ enum Category : uint8_t {
     INVALID     // for invalid tokens
 };
 
-// Specific Opcodes mapping to characters
+// Determines the specific opcode within the category
 enum class Opcode : uint32_t {
     LOAD,
     LOADI,
@@ -62,7 +62,7 @@ inline const char* categoryName(Category c) {
     }
 }
 
-// Mapping Opcode enumeration for a token's lexeme to a string for printing
+// Mapping Opcode category for a token's lexeme to a string for printing
 inline const char* opcodeSpelling(uint32_t id) {
     switch(id) {
         case 0: return "load";

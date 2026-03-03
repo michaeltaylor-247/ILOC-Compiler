@@ -63,10 +63,10 @@ int IR::getOpCount() { return opCount; }
 // Pretty Print IR
 // --------------------
 void IR::printOperand(Operand& op) {
-    if (op.SR != -1) std::cout << std::setw(4) << op.SR; else std::cout << std::setw(4) << "-";
-    if (op.VR != -1) std::cout << std::setw(4) << op.VR; else std::cout << std::setw(4) << "-";
-    if (op.PR != -1) std::cout << std::setw(4) << op.PR; else std::cout << std::setw(4) << "-";
-    if (op.NU != -1) std::cout << std::setw(4) << op.NU; else std::cout << std::setw(4) << "-";
+    if (op.SR > -1) std::cout << std::setw(4) << op.SR; else std::cout << std::setw(4) << "-";
+    if (op.VR > -1) std::cout << std::setw(4) << op.VR; else std::cout << std::setw(4) << "-";
+    if (op.PR > -1) std::cout << std::setw(4) << op.PR; else std::cout << std::setw(4) << "-";
+    if (op.NU > -1) std::cout << std::setw(4) << op.NU; else std::cout << std::setw(4) << "-";
     std::cout << " |";
 }
 
