@@ -7,13 +7,14 @@
 
 class RegAlloc {
     private:
-        int vrName;
-
         // Renaming Source Registers to Virtual
+        int vrName;
         std::vector<int> SRtoVR;    // SR @ i maps to VR at SRtoVR[i]
         std::vector<int> LU;        // SR @ i was last used at LU[i]
 
         // Allocating Physical Registers from Virtual
+        int k;
+        int maxLive;
         std::vector<int> VRtoPR;
         std::vector<int> PRtoVR;
         std::vector<int> VRtoSpillLoc;  // VR spillover into RAM 
@@ -23,11 +24,11 @@ class RegAlloc {
 
     public:
         RegAlloc();
-        RegAlloc(int maxSR);
+        RegAlloc(int maxSR, int k);
         ~RegAlloc();
 
-        bool renameReg(IR& ir);
-        void allocate();
+        void renameReg(IR& ir);
+        void allocate(IR& ir);
         
 
     private:

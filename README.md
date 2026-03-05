@@ -34,7 +34,7 @@ This directory contains the implementation of a compiler targeting the ILOC lang
 - Register Allocation (Virtual Reg --> Physical Reg)
 
 ##### Part 1 (rename regsiter)
-Take the source registers and map to virtual registers based on the "lifespace"
+Take the source registers and map to virtual registers based on the "lifespan"
 - Live Range --> Virtual Register Mapping
 
 ##### part 2 (register allocation)
@@ -57,6 +57,13 @@ EX:
 - `r3` is defined
 
 The unique opcode is `store`... the right hand side of `=>` is a *use*. For other opcodes, the operand to the right of `=>` is a define
+
+##### Part 3: Optimizing Register Allocation
+- In bottom up allocation, there are times where naively spilling or restoring by using a `loadI` and `store` is not needed. 
+
+Amongst other things, this is a key optimization you can make as the difference in cycle count between opcodes that involve accessing memory and those that don't is HUGE ~ 100x more cycles in application. 
+
+> Refer to page 688 in the textbook for some detail on bottom up compilation. 
 
 ----
 #### TODO

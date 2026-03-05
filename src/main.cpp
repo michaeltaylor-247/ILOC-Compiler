@@ -94,10 +94,13 @@ int main(int argc, char* argv[]) {
     // If Register Renaming invokved, call register renaming
     if(options.mode == cli::Mode::Rename) {
         if(!isValidILOC) return 1;
-        RegAlloc regAlloc(ir.getMaxSR());
-        if(!regAlloc.renameReg(ir)) return 1;
+        RegAlloc regAlloc(ir.getMaxSR(), options.numReg);
+        regAlloc.allocate(ir);
+
+        // printing
         ir.printRenamedILOC();
         ir.printIR();
+        std::cout << "Number of PR: " << options.numReg << std::endl;
         return 0;
     }
 

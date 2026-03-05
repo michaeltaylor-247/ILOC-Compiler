@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 namespace cli {
     // Execution flag precedence: -h, -x, -r, -p, and -s
@@ -20,11 +21,13 @@ namespace cli {
         Mode mode{};                // Defualt behavior 
         std::string error = "";     // Error Message
         std::string filename = "";  // Filename
+        int numReg = 0;
     };
 
 
     // Main Functionality
     Options parseArgs(int argc, char** argv);
+    bool isNum(std::string& s);
 
     // Help Text
     void help();

@@ -1,5 +1,12 @@
 #include "CLI.h"
 
+
+bool cli::isNum(std::string& s) {
+    return !s.empty() && std::find_if(s.begin(), 
+        s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
+}
+
+
 cli::Options cli::parseArgs(int argc, char** argv) {
     cli::Options opts{};
 
@@ -8,7 +15,10 @@ cli::Options cli::parseArgs(int argc, char** argv) {
 
     int flagCount = 0;
     for(auto& arg : args) {
-        if(arg[0] != '-') {  // Treat as file
+        if(isNum(arg)) { // getting k (num of physical regs)
+            opts.numReg = stoi(arg);
+        }
+        else if(arg[0] != '-') {  // Treat as file
             if(opts.filename.empty()) opts.filename = std::string(arg);
             else { 
                 opts.error = "ERROR: Too many files passed";  
@@ -36,7 +46,7 @@ cli::Options cli::parseArgs(int argc, char** argv) {
     // Post Processing of Arguments...
 
     // No flag was provided --> parse mode
-    if(opts.mode == Mode::Initial) opts.mode = Mode::Parse;
+    if(opts.mode == Mode::Initial) opts.mode = Mode::Rename;
 
     // General Error 
     if(opts.mode == Mode::Invalid) opts.error = "ERROR: Invalid Flag Passed";
