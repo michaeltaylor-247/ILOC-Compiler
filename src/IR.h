@@ -45,6 +45,7 @@ class IR {
 
         // IR Methods
         IRNode* appendIR(IRNode* node);
+        IRNode* insertBefore(IRNode* pos, IRNode* node);
         IRNode* getHead();
         IRNode* getTail();
         int getMaxSR();

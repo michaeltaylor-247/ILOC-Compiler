@@ -20,6 +20,7 @@ class RegAlloc {
         std::vector<int> VRtoSpillLoc;  // VR spillover into RAM 
         std::vector<int> PRNU;          // Physical Reg's Next Use 
         int spillReg;
+        int nextSpillLoc;
         
 
     public:
@@ -38,5 +39,7 @@ class RegAlloc {
         void addUseOperands(IRNode* node, std::vector<Operand*>& uses);
 
         // Helpers for Allocate
-        int getPR();
+        int getPR(IR& ir, IRNode* at);
+        void spill(IR& ir, IRNode* at, int pr);
+        void restore(IR& ir, IRNode* at, int vr, int pr);
 };

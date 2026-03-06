@@ -95,12 +95,16 @@ int main(int argc, char* argv[]) {
     if(options.mode == cli::Mode::Rename) {
         if(!isValidILOC) return 1;
         RegAlloc regAlloc(ir.getMaxSR(), options.numReg);
-        regAlloc.allocate(ir);
 
-        // printing
-        ir.printRenamedILOC();
-        ir.printIR();
-        std::cout << "Number of PR: " << options.numReg << std::endl;
+        // "-x <file>" should only rename; "k <file>" performs allocation.
+        if(options.numReg > 0) {
+            regAlloc.allocate(ir);
+            ir.printIR();
+            std::cout << "Number of PR: " << options.numReg << std::endl;
+        } else {
+            regAlloc.renameReg(ir);
+            ir.printRenamedILOC();
+        }
         return 0;
     }
 

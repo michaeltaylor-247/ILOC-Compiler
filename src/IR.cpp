@@ -51,6 +51,24 @@ IRNode* IR::appendIR(IRNode* node) {
     return node;
 }
 
+IRNode* IR::insertBefore(IRNode* pos, IRNode* node) {
+    if(pos == nullptr) {
+        return appendIR(node);
+    }
+
+    node->next = pos;
+    node->prev = pos->prev;
+
+    if(pos->prev) {
+        pos->prev->next = node;
+    } else {
+        head = node;
+    }
+    pos->prev = node;
+    opCount++;
+    return node;
+}
+
 IRNode* IR::getHead() { return head; }
 
 IRNode* IR::getTail() { return tail; }

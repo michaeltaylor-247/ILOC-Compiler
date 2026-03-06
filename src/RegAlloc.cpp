@@ -1,4 +1,4 @@
-#include "RegAlloc.h
+#include "RegAlloc.h"
 
 // ----------------------
 // Class Things
@@ -7,7 +7,8 @@ RegAlloc::RegAlloc() : vrName(0) {}
 
 RegAlloc::RegAlloc(int maxSR, int numReg) : 
     vrName(0), SRtoVR((maxSR + 1), -1), LU((maxSR + 1),-1), 
-    k(numReg), maxLive(0), VRtoPR(0), PRtoVR(0), VRtoSpillLoc(0), PRNU(0) {}
+    k(numReg), maxLive(0), VRtoPR(0), PRtoVR(0), VRtoSpillLoc(0), PRNU(0),
+    spillReg(-1), nextSpillLoc(32768) {}
 
 RegAlloc::~RegAlloc() {}
 
@@ -54,7 +55,9 @@ void RegAlloc::addUseOperands(IRNode* node, std::vector<Operand*>& uses) {
 // Functionality
 // ----------------------
 void RegAlloc::renameReg(IR& ir) {
-    // implemetn the pseudo code for renaming algorithm
+    // implement the pseudo code for renaming algorithm
+    int liveNow = 0;
+    maxLive = 0;
     
     int index = ir.getOpCount();
     for(IRNode* node = ir.getTail(); node != nullptr; node = node->prev) {
@@ -79,12 +82,15 @@ void RegAlloc::renameReg(IR& ir) {
 
             if(SRtoVR[sr] == -1) {
                 SRtoVR[sr] = vrName++;
+                liveNow++;
+                maxLive = std::max(maxLive, liveNow);
             }
             op->VR = SRtoVR[sr];
             op->NU = LU[sr];
 
             SRtoVR[sr] = -1;
             LU[sr] = -1;
+            liveNow--;
         }
 
         for(Operand* op : uses) {
@@ -95,6 +101,8 @@ void RegAlloc::renameReg(IR& ir) {
 
             if(SRtoVR[sr] == -1) {
                 SRtoVR[sr] = vrName++;
+                liveNow++;
+                maxLive = std::max(maxLive, liveNow);
             }
             op->VR = SRtoVR[sr];
             op->NU = LU[sr];
@@ -115,42 +123,88 @@ void RegAlloc::renameReg(IR& ir) {
 // ----------------------------------------------------------
 
 // Returns availabel PR; if none, returns PR whose NU is furthest in future
-int RegAlloc::getPR() {
-    // Can use all k registers
-    if(maxLive <= k) {
-        for(int i = 0; i < k; i++) {
-            if(PRtoVR[i] == -1) return i;
+int RegAlloc::getPR(IR& ir, IRNode* at) {
+    const bool reserveSpillReg = (maxLive > k);
+    const int allocLimit = reserveSpillReg ? (k - 1) : k;
+
+    for(int i = 0; i < allocLimit; i++) {
+        if(PRtoVR[i] == -1) return i;
+    }
+
+    int victimPR = -1;
+    int farthestNU = -1;
+    for(int i = 0; i < allocLimit; i++) {
+        const int nuScore = (PRNU[i] == -1) ? INT_MAX : PRNU[i];
+        if(nuScore > farthestNU) {
+            farthestNU = nuScore;
+            victimPR = i;
         }
     }
-    // Must reserver a register for spill
-    else {
-        // free "furthest" next used PR -- idk say pry
-        //  - Linear Scan across PRNU[]? to find max()
-        int spillReg = std::max(PRNU.begin(), PRNU.end());
 
-        spill(spillReg); // --> store memory somewhere
+    if(victimPR >= 0) {
+        spill(ir, at, victimPR);
+        return victimPR;
     }
+
+    return 0;
 }
 
-spill() {
-    // loadl -- to load the spill location address
-    // store -- to store the to be spilled value at the specifed address
-    //
-    //
-    // IF LOADI is what is spilling, you don't need to "spill it", simply
-    // "rematerialize it"... however you can't possibly know this (NP-complete)
-    
+void RegAlloc::spill(IR& ir, IRNode* at, int pr) {
+    if(pr < 0 || pr >= (int)PRtoVR.size()) return;
 
-    // Where we handle the insertion of the spill code
+    const int vr = PRtoVR[pr];
+    if(vr < 0) return;
+    if(spillReg < 0) return;
+
+    if(vr >= 0 && vr < (int)VRtoSpillLoc.size() && VRtoSpillLoc[vr] == -1) {
+        VRtoSpillLoc[vr] = nextSpillLoc;
+        nextSpillLoc += 4;
+    }
+
+    IRNode* loadAddr = new IRNode();
+    loadAddr->line = at ? at->line : 0;
+    loadAddr->opcode = ILOC::Opcode::LOADI;
+    loadAddr->op1.SR = VRtoSpillLoc[vr];
+    loadAddr->op3.PR = spillReg;
+    ir.insertBefore(at, loadAddr);
+
+    IRNode* storeVal = new IRNode();
+    storeVal->line = at ? at->line : 0;
+    storeVal->opcode = ILOC::Opcode::STORE;
+    storeVal->op1.PR = pr;
+    storeVal->op3.PR = spillReg;
+    ir.insertBefore(at, storeVal);
+
+    VRtoPR[vr] = -1;
+    PRtoVR[pr] = -1;
+    PRNU[pr] = -1;
 }
 
-restore() {
-    // loadI -- to put the spill locatio into address
-    // store -- to retrieve the spilled value to its PR
+void RegAlloc::restore(IR& ir, IRNode* at, int vr, int pr) {
+    if(vr < 0 || vr >= (int)VRtoPR.size()) return;
+    if(pr < 0 || pr >= (int)PRtoVR.size()) return;
+    if(spillReg < 0) return;
 
+    const int spillLoc = VRtoSpillLoc[vr];
+    if(spillLoc < 0) return;
 
-    // Insert restore code
-} 
+    IRNode* loadAddr = new IRNode();
+    loadAddr->line = at ? at->line : 0;
+    loadAddr->opcode = ILOC::Opcode::LOADI;
+    loadAddr->op1.SR = spillLoc;
+    loadAddr->op3.PR = spillReg;
+    ir.insertBefore(at, loadAddr);
+
+    IRNode* loadVal = new IRNode();
+    loadVal->line = at ? at->line : 0;
+    loadVal->opcode = ILOC::Opcode::LOAD;
+    loadVal->op1.PR = spillReg;
+    loadVal->op3.PR = pr;
+    ir.insertBefore(at, loadVal);
+
+    VRtoPR[vr] = pr;
+    PRtoVR[pr] = vr;
+}
 
 
 void RegAlloc::allocate(IR& ir) {
@@ -162,6 +216,7 @@ void RegAlloc::allocate(IR& ir) {
     PRtoVR.resize(k, -1);
     VRtoSpillLoc.resize(vrName, -1);
     PRNU.resize(k, -1); 
+    spillReg = (maxLive > k) ? (k - 1) : -1;
 
     // Alloc
     for(IRNode* node = ir.getHead(); node != nullptr; node = node->next) {
@@ -175,20 +230,30 @@ void RegAlloc::allocate(IR& ir) {
 
         // Allocate PR if needed; maintain mappings
         for(Operand* op : uses) {
+            if(op->VR < 0) continue;
             if(VRtoPR[op->VR] == -1) {
-                int pr = getPR();
+                int pr = getPR(ir, node);
+                if(VRtoSpillLoc[op->VR] != -1) {
+                    restore(ir, node, op->VR, pr);
+                } else {
+                    VRtoPR[op->VR] = pr;
+                    PRtoVR[pr] = op->VR;
+                }
                 op->PR = pr;
-                VRtoPR[op->VR] = pr;
-                PRtoVR[pr] = op->VR;
                 PRNU[pr] = op->NU;
+            } else {
+                op->PR = VRtoPR[op->VR];
+                PRNU[op->PR] = op->NU;
             }
         }
         // Free a "use" operand if its the last use of it -- thereby freeing the PR associated with it
         for(Operand* op : uses) {
             if(op->NU == -1) {
-                PRNU[VRtoPR[op->PR]] = -1;
+                if(op->PR < 0) continue;
+                const int pr = op->PR;
+                PRNU[pr] = -1;
                 op->PR = -1;
-                PRtoVR[op->VR] = -1;
+                PRtoVR[pr] = -1;
                 VRtoPR[op->VR] = -1;
             }
         }
@@ -196,7 +261,8 @@ void RegAlloc::allocate(IR& ir) {
 
         // For definitions, allocate a PR
         for(Operand* op : defs) {
-            int pr = getPR();
+            if(op->VR < 0) continue;
+            int pr = getPR(ir, node);
             op->PR = pr;
             VRtoPR[op->VR] = pr;
             PRtoVR[pr] = op->VR;
@@ -205,4 +271,3 @@ void RegAlloc::allocate(IR& ir) {
     }
 
 }
-
