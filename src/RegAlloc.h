@@ -39,7 +39,7 @@ class RegAlloc {
         void addUseOperands(IRNode* node, std::vector<Operand*>& uses);
 
         // Helpers for Allocate
-        int getPR(IR& ir, IRNode* at);
+        int getPR(IR& ir, IRNode* at, const std::vector<char>& blockedPR);
         void spill(IR& ir, IRNode* at, int pr);
         void restore(IR& ir, IRNode* at, int vr, int pr);
 };

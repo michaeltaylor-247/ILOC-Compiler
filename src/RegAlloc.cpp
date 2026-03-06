@@ -123,17 +123,19 @@ void RegAlloc::renameReg(IR& ir) {
 // ----------------------------------------------------------
 
 // Returns availabel PR; if none, returns PR whose NU is furthest in future
-int RegAlloc::getPR(IR& ir, IRNode* at) {
+int RegAlloc::getPR(IR& ir, IRNode* at, const std::vector<char>& blockedPR) {
     const bool reserveSpillReg = (maxLive > k);
     const int allocLimit = reserveSpillReg ? (k - 1) : k;
 
     for(int i = 0; i < allocLimit; i++) {
+        if(i < (int)blockedPR.size() && blockedPR[i]) continue;
         if(PRtoVR[i] == -1) return i;
     }
 
     int victimPR = -1;
     int farthestNU = -1;
     for(int i = 0; i < allocLimit; i++) {
+        if(i < (int)blockedPR.size() && blockedPR[i]) continue;
         const int nuScore = (PRNU[i] == -1) ? INT_MAX : PRNU[i];
         if(nuScore > farthestNU) {
             farthestNU = nuScore;
@@ -224,6 +226,7 @@ void RegAlloc::allocate(IR& ir) {
         std::vector<Operand*> uses;
         defs.reserve(1);
         uses.reserve(2);
+        std::vector<char> blockedPR(k, 0);
 
         addDefOperands(node, defs);
         addUseOperands(node, uses);
@@ -232,7 +235,7 @@ void RegAlloc::allocate(IR& ir) {
         for(Operand* op : uses) {
             if(op->VR < 0) continue;
             if(VRtoPR[op->VR] == -1) {
-                int pr = getPR(ir, node);
+                int pr = getPR(ir, node, blockedPR);
                 if(VRtoSpillLoc[op->VR] != -1) {
                     restore(ir, node, op->VR, pr);
                 } else {
@@ -241,9 +244,11 @@ void RegAlloc::allocate(IR& ir) {
                 }
                 op->PR = pr;
                 PRNU[pr] = op->NU;
+                blockedPR[pr] = 1;
             } else {
                 op->PR = VRtoPR[op->VR];
                 PRNU[op->PR] = op->NU;
+                blockedPR[op->PR] = 1;
             }
         }
         // Free a "use" operand if its the last use of it -- thereby freeing the PR associated with it
@@ -261,7 +266,7 @@ void RegAlloc::allocate(IR& ir) {
         // For definitions, allocate a PR
         for(Operand* op : defs) {
             if(op->VR < 0) continue;
-            int pr = getPR(ir, node);
+            int pr = getPR(ir, node, blockedPR);
             op->PR = pr;
             VRtoPR[op->VR] = pr;
             PRtoVR[pr] = op->VR;
