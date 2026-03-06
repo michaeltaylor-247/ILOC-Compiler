@@ -99,8 +99,7 @@ int main(int argc, char* argv[]) {
         // "-x <file>" should only rename; "k <file>" performs allocation.
         if(options.numReg > 0) {
             regAlloc.allocate(ir);
-            ir.printIR();
-            std::cout << "Number of PR: " << options.numReg << std::endl;
+            ir.printAllocatedILOC();
         } else {
             regAlloc.renameReg(ir);
             ir.printRenamedILOC();

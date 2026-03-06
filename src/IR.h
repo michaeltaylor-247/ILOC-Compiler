@@ -55,4 +55,5 @@ class IR {
         void printOperand(Operand& op);
         void printIR();
         void printRenamedILOC();
+        void printAllocatedILOC();
 };

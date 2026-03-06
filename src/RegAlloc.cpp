@@ -252,7 +252,6 @@ void RegAlloc::allocate(IR& ir) {
                 if(op->PR < 0) continue;
                 const int pr = op->PR;
                 PRNU[pr] = -1;
-                op->PR = -1;
                 PRtoVR[pr] = -1;
                 VRtoPR[op->VR] = -1;
             }

@@ -143,3 +143,42 @@ void IR::printRenamedILOC() {
         }
     }
 }
+
+void IR::printAllocatedILOC() {
+    for(IRNode* p = head; p != nullptr; p = p->next) {
+        switch(p->opcode) {
+            case ILOC::Opcode::LOAD:
+                std::cout << "load r" << p->op1.PR << " => r" << p->op3.PR << "\n";
+                break;
+            case ILOC::Opcode::STORE:
+                std::cout << "store r" << p->op1.PR << " => r" << p->op3.PR << "\n";
+                break;
+            case ILOC::Opcode::LOADI:
+                std::cout << "loadI " << p->op1.SR << " => r" << p->op3.PR << "\n";
+                break;
+            case ILOC::Opcode::ADD:
+                std::cout << "add r" << p->op1.PR << ", r" << p->op2.PR << " => r" << p->op3.PR << "\n";
+                break;
+            case ILOC::Opcode::SUB:
+                std::cout << "sub r" << p->op1.PR << ", r" << p->op2.PR << " => r" << p->op3.PR << "\n";
+                break;
+            case ILOC::Opcode::MULT:
+                std::cout << "mult r" << p->op1.PR << ", r" << p->op2.PR << " => r" << p->op3.PR << "\n";
+                break;
+            case ILOC::Opcode::LSHIFT:
+                std::cout << "lshift r" << p->op1.PR << ", r" << p->op2.PR << " => r" << p->op3.PR << "\n";
+                break;
+            case ILOC::Opcode::RSHIFT:
+                std::cout << "rshift r" << p->op1.PR << ", r" << p->op2.PR << " => r" << p->op3.PR << "\n";
+                break;
+            case ILOC::Opcode::OUTPUT:
+                std::cout << "output " << p->op1.SR << "\n";
+                break;
+            case ILOC::Opcode::NOP:
+                std::cout << "nop\n";
+                break;
+            default:
+                break;
+        }
+    }
+}
