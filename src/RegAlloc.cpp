@@ -264,7 +264,7 @@ void RegAlloc::allocate(IR& ir) {
         // For definitions, allocate a PR
         for(Operand* op : defs) {
             if(op->VR < 0) continue;
-            int pr = getPR(ir, node, blockedPR);
+            int pr = getPR(ir, node, {});
             op->PR = pr;
             VRtoPR[op->VR] = pr;
             PRtoVR[pr] = op->VR;
