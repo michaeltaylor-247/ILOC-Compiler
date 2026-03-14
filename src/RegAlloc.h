@@ -18,7 +18,10 @@ class RegAlloc {
         std::vector<int> VRtoPR;
         std::vector<int> PRtoVR;
         std::vector<int> VRtoSpillLoc;  // VR spillover into RAM 
+        std::vector<int> VRRematValue;  // Constant value for rematerializable VRs
         std::vector<int> PRNU;          // Physical Reg's Next Use 
+        std::vector<char> VRHasSpillCopy;
+        std::vector<char> VRIsRematerializable;
         int spillReg;
         int nextSpillLoc;
         
@@ -40,6 +43,8 @@ class RegAlloc {
 
         // Helpers for Allocate
         int getPR(IR& ir, IRNode* at, const std::vector<char>& blockedPR);
+        int getVictimClass(int pr);
         void spill(IR& ir, IRNode* at, int pr);
         void restore(IR& ir, IRNode* at, int vr, int pr);
+        void rematerialize(IR& ir, IRNode* at, int vr, int pr);
 };

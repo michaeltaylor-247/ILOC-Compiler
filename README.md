@@ -65,6 +65,42 @@ Amongst other things, this is a key optimization you can make as the difference 
 
 > Refer to page 688 in the textbook for some detail on bottom up compilation. 
 
+==== Actual optimziation notes! ====
+When optimizing the spill/restore cost and code, there are really 3 cases to consider:
+- "Dirty" --> a value that exists on in a physical register; it was computed. Thus to spill it means to save it in memory. Otherwise its lost
+    - so a loadI and store
+
+- "Clean" ---> a value that exists in memory. It was either loaded directly from memory in PR or someone else had already spilled it. Thus there is no need to store it... its already there.
+    - Still need to restore tho
+
+- "Re-materializable" ---> values that are cheaper to recompute rather than actually spil
+    -  The example here is `loadI`. If you you load a constant into a register, you don't need to spill the defined register from loadi. 
+    - There are others... results from an `add`
+    - Thus you don't need to store (spill) OR restore
+
+
+Clean values are complex... zoran says that an entire pass before allocation would most likely be necessary. The idae behind clean values is that the value might already be sitting in memory, no need to respill it. In the general case where the ILOC program has defined a VR with a `load`, there is a chance that the value is still in memory... hwoever the user ILOC program might've also overwritten that memory location.
+
+However a subset of clean values are more manageable. This is when the allocator has created a clean value due to its spilling -- the value @ memory is guaranteed to be valid since the allocator is the one writing to spill memory (memory > 32768).
+
+
+The other type of optimziation is "which register to spill"? 
+We've been using the heuristic, "spill the Register whose next use is the furthest". However when we take into consideration the costs of differen types of values, it might make sense to spill a different register because its restoring cost (or rematerialization) would actually be less than the furthest next use one. 
+
+The optimziation is to considering the following cases:
+- Find the max NU for 2 or 3 registers and then check then check which are...
+    - dirty & rematerializable
+    - dirty, already spilled, and rematerialzable.
+
+The allocator can track rematerialiable and already spilled values pretty easily because at definiition with `loadI`, you know its rematerializable and at the time of spilling you know the VR is already spilled. Then can choose which register to spill based off this.
+
+You can also add other hueristics like taking into accout "distance" vs "cost"... idk if that makes sense. 
+- "if the operations are this close, then do that". Otherwise choose the other. 
+
+
+One more optimization to reconsider is the reserved spill register. That register is idle for potentially a large number of operations... only needed for spilling and restoring. So can try to find some method to take advantage of the reserved register.
+
+
 ----
 #### TODO
 - [x] Refactor to make IR first class
