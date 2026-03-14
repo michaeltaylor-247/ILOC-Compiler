@@ -160,22 +160,22 @@ void RegAlloc::spill(IR& ir, IRNode* at, int pr) {
     if(VRtoSpillLoc[vr] == -1) {
         VRtoSpillLoc[vr] = nextSpillLoc;
         nextSpillLoc += 4;
+    
+        // First eviction of this VR creates the clean memory copy.
+        IRNode* loadAddr = new IRNode();
+        loadAddr->line = at ? at->line : 0;
+        loadAddr->opcode = ILOC::Opcode::LOADI;
+        loadAddr->op1.SR = VRtoSpillLoc[vr];
+        loadAddr->op3.PR = spillReg;
+        ir.insertBefore(at, loadAddr);
+
+        IRNode* storeVal = new IRNode();
+        storeVal->line = at ? at->line : 0;
+        storeVal->opcode = ILOC::Opcode::STORE;
+        storeVal->op1.PR = pr;
+        storeVal->op3.PR = spillReg;
+        ir.insertBefore(at, storeVal);
     }
-
-    // Actually insert spill code into the ILOC program
-    IRNode* loadAddr = new IRNode();
-    loadAddr->line = at ? at->line : 0;
-    loadAddr->opcode = ILOC::Opcode::LOADI;
-    loadAddr->op1.SR = VRtoSpillLoc[vr];
-    loadAddr->op3.PR = spillReg;
-    ir.insertBefore(at, loadAddr);
-
-    IRNode* storeVal = new IRNode();
-    storeVal->line = at ? at->line : 0;
-    storeVal->opcode = ILOC::Opcode::STORE;
-    storeVal->op1.PR = pr;
-    storeVal->op3.PR = spillReg;
-    ir.insertBefore(at, storeVal);
 
     VRtoPR[vr] = -1;
     PRtoVR[pr] = -1;
