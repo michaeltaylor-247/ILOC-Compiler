@@ -124,19 +124,22 @@ void RegAlloc::renameReg(IR& ir) {
 
 // Returns availabel PR; if none, returns PR whose NU is furthest in future
 int RegAlloc::getPR(IR& ir, IRNode* at, const std::vector<char>& blockedPR) {
-    const bool reserveSpillReg = (maxLive > k);
-    const int allocLimit = reserveSpillReg ? (k - 1) : k;
+    bool reserveSpillReg = (maxLive > k);
+    int allocLimit = reserveSpillReg ? (k - 1) : k;
 
+    // search for available, return if found
     for(int i = 0; i < allocLimit; i++) {
-        if(i < (int)blockedPR.size() && blockedPR[i]) continue;
+        if(i < blockedPR.size() && blockedPR[i]) continue;
         if(PRtoVR[i] == -1) return i;
     }
 
+    // Need to spill a PR...
+    // Look through all PRs and their NU. Choose the one w/ furthest NU
     int victimPR = -1;
     int farthestNU = -1;
     for(int i = 0; i < allocLimit; i++) {
-        if(i < (int)blockedPR.size() && blockedPR[i]) continue;
-        const int nuScore = (PRNU[i] == -1) ? INT_MAX : PRNU[i];
+        if(i < blockedPR.size() && blockedPR[i]) continue;
+        int nuScore = (PRNU[i] == -1) ? INT_MAX : PRNU[i];
         if(nuScore > farthestNU) {
             farthestNU = nuScore;
             victimPR = i;
@@ -152,17 +155,14 @@ int RegAlloc::getPR(IR& ir, IRNode* at, const std::vector<char>& blockedPR) {
 }
 
 void RegAlloc::spill(IR& ir, IRNode* at, int pr) {
-    if(pr < 0 || pr >= (int)PRtoVR.size()) return;
+    int vr = PRtoVR[pr];
 
-    const int vr = PRtoVR[pr];
-    if(vr < 0) return;
-    if(spillReg < 0) return;
-
-    if(vr >= 0 && vr < (int)VRtoSpillLoc.size() && VRtoSpillLoc[vr] == -1) {
+    if(VRtoSpillLoc[vr] == -1) {
         VRtoSpillLoc[vr] = nextSpillLoc;
         nextSpillLoc += 4;
     }
 
+    // Actually insert spill code into the ILOC program
     IRNode* loadAddr = new IRNode();
     loadAddr->line = at ? at->line : 0;
     loadAddr->opcode = ILOC::Opcode::LOADI;
@@ -183,13 +183,9 @@ void RegAlloc::spill(IR& ir, IRNode* at, int pr) {
 }
 
 void RegAlloc::restore(IR& ir, IRNode* at, int vr, int pr) {
-    if(vr < 0 || vr >= (int)VRtoPR.size()) return;
-    if(pr < 0 || pr >= (int)PRtoVR.size()) return;
-    if(spillReg < 0) return;
+    int spillLoc = VRtoSpillLoc[vr];
 
-    const int spillLoc = VRtoSpillLoc[vr];
-    if(spillLoc < 0) return;
-
+    // Actually insert the restore code into ILOC
     IRNode* loadAddr = new IRNode();
     loadAddr->line = at ? at->line : 0;
     loadAddr->opcode = ILOC::Opcode::LOADI;
@@ -238,14 +234,16 @@ void RegAlloc::allocate(IR& ir) {
                 int pr = getPR(ir, node, blockedPR);
                 if(VRtoSpillLoc[op->VR] != -1) {
                     restore(ir, node, op->VR, pr);
-                } else {
+                } 
+                else {
                     VRtoPR[op->VR] = pr;
                     PRtoVR[pr] = op->VR;
                 }
                 op->PR = pr;
                 PRNU[pr] = op->NU;
                 blockedPR[pr] = 1;
-            } else {
+            } 
+            else {
                 op->PR = VRtoPR[op->VR];
                 PRNU[op->PR] = op->NU;
                 blockedPR[op->PR] = 1;
