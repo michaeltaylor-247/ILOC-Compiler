@@ -101,27 +101,3 @@ You can also add other hueristics like taking into accout "distance" vs "cost"..
 One more optimization to reconsider is the reserved spill register. That register is idle for potentially a large number of operations... only needed for spilling and restoring. So can try to find some method to take advantage of the reserved register.
 
 
-----
-#### TODO
-- [x] Refactor to make IR first class
-    - [x] Move the IR struct to own file/class
-    - [x] Move the Opcode struct from scanner?
-    - [x] Add to main
-    - [x] Alter the Scanner Class to modify IR via reference (token stream atp)
-    - [x] Alter the Parser Class to modify IR via reference (actual IR)
-
-- [ ] Implement the RegAlloc Class...
-    - [ ] Renaming
-    - [ ] CLI regalloc flags
-        - [ ] Including the weird ones? Read the doc
-
-
-
-- Other Refactoring...
-    - [ ] The refactor from earlier was nice and was mvp...but Parser still needs more. 
-        - First off the def consturctor aint even doing anything, i just hardcode default value. 
-        - the internal IR pointer we maintain is init when we call `.parse()` not when we init the parser
-            - this is where we also pass in the reference to a scanner...
-        - etc.
-        - idk, the thing reads odd. I feel like Parser should not necesarrily own a reference to the Scanner or the IR.
-

@@ -3,6 +3,7 @@
 /src-old
 /test
 /input
+/results
 
 # ignore target executable
 434alloc
