@@ -61,11 +61,14 @@ void RegAlloc::renameReg(IR& ir) {
     maxLive = 0;
     
     int index = ir.getOpCount();
+    std::vector<Operand*> defs;
+    std::vector<Operand*> uses;
+    defs.reserve(1);
+    uses.reserve(2);
+
     for(IRNode* node = ir.getTail(); node != nullptr; node = node->prev) {
-        std::vector<Operand*> defs;
-        std::vector<Operand*> uses;
-        defs.reserve(1);
-        uses.reserve(2);
+        defs.clear();
+        uses.clear();
 
         
         // Following the pseudo code, each IR Node should have a set of 
@@ -136,7 +139,7 @@ int RegAlloc::getVictimClass(int pr) {
 int RegAlloc::getPR(IR& ir, IRNode* at, const std::vector<char>& blockedPR) {
     bool reserveSpillReg = (maxLive > k);
     int allocLimit = reserveSpillReg ? (k - 1) : k;
-    int blockedCount = blockedPR.size();
+    int blockedCount = static_cast<int>(blockedPR.size());
 
     // search for available, return if found
     for(int i = 0; i < allocLimit; i++) {
@@ -157,21 +160,30 @@ int RegAlloc::getPR(IR& ir, IRNode* at, const std::vector<char>& blockedPR) {
         return i;
     }
 
-    // Collect the top 3 next furthest use
-    std::vector<int> topVictims;
+    // Collect the top 3 next furthest use without heap allocation
+    int topVictims[3] = {-1, -1, -1};
+    int topCount = 0;
     for(int i = 0; i < allocLimit; i++) {
         if(i < blockedCount && blockedPR[i]) continue;
         int nuScore = (PRNU[i] == -1) ? INT_MAX : PRNU[i];
 
-        auto pos = topVictims.begin();
-        while(pos != topVictims.end()) {
-            int otherNU = (PRNU[*pos] == -1) ? INT_MAX : PRNU[*pos];
+        int pos = 0;
+        while(pos < topCount) {
+            int otherPR = topVictims[pos];
+            int otherNU = (PRNU[otherPR] == -1) ? INT_MAX : PRNU[otherPR];
             if(nuScore > otherNU) break;
             pos++;
         }
-        topVictims.insert(pos, i);
-        if(topVictims.size() > 3) {
-            topVictims.pop_back();
+
+        if(pos < 3) {
+            int limit = (topCount < 3) ? topCount : 2;
+            for(int shift = limit; shift > pos; shift--) {
+                topVictims[shift] = topVictims[shift - 1];
+            }
+            topVictims[pos] = i;
+            if(topCount < 3) {
+                topCount++;
+            }
         }
     }
 
@@ -179,7 +191,8 @@ int RegAlloc::getPR(IR& ir, IRNode* at, const std::vector<char>& blockedPR) {
     int victimPR = -1;
     int victimClass = INT_MAX;
     int farthestNU = -1;
-    for(int pr : topVictims) {
+    for(int idx = 0; idx < topCount; idx++) {
+        const int pr = topVictims[idx];
         int valueClass = getVictimClass(pr);
         int nuScore = (PRNU[pr] == -1) ? INT_MAX : PRNU[pr];
 
@@ -292,12 +305,17 @@ void RegAlloc::allocate(IR& ir) {
     spillReg = (maxLive > k) ? (k - 1) : -1;
 
     // Alloc
+    std::vector<Operand*> defs;
+    std::vector<Operand*> uses;
+    defs.reserve(1);
+    uses.reserve(2);
+    std::vector<char> blockedPR(k, 0);
+    const std::vector<char> noBlockedPR;
+
     for(IRNode* node = ir.getHead(); node != nullptr; node = node->next) {
-        std::vector<Operand*> defs;
-        std::vector<Operand*> uses;
-        defs.reserve(1);
-        uses.reserve(2);
-        std::vector<char> blockedPR(k, 0);
+        defs.clear();
+        uses.clear();
+        std::fill(blockedPR.begin(), blockedPR.end(), 0);
 
         addDefOperands(node, defs);
         addUseOperands(node, uses);
@@ -346,7 +364,7 @@ void RegAlloc::allocate(IR& ir) {
         // For definitions, allocate a PR
         for(Operand* op : defs) {
             if(op->VR < 0) continue;
-            int pr = getPR(ir, node, {});
+            int pr = getPR(ir, node, noBlockedPR);
             op->PR = pr;
             VRtoPR[op->VR] = pr;
             PRtoVR[pr] = op->VR;
